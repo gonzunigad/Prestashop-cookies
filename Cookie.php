@@ -371,8 +371,37 @@ class CookieCore
             $content = 0;
             $time = 1;
         }
-
-        return setcookie($this->_name, $content, $time, $this->_path, $this->_domain, $this->_secure, true);
+        
+        if (Configuration::get('PS_SSL_ENABLED') == 0 or strpos($_SERVER['REQUEST_URI'], 'admin') === 1){
+            return setcookie($this->_name, $content, $time, $this->_path, $this->_domain, $this->_secure, true);
+        }else{
+            if (PHP_VERSION_ID < 70300) {
+                return setcookie(
+                    $this->_name,
+                    $content,
+                    $time,
+                    $this->_path,
+                    $this->_domain . '; SameSite= None',
+                    $this->_secure,
+                    true
+                );
+            }else{
+                return setcookie(
+                    $this->_name,
+                    $content,
+                    [
+                        'expires' => $time,
+                        'path' => $this->_path,
+                        'domain' => $this->_domain,
+                        'secure' => $this->_secure,
+                        'httponly' => true,
+                        'samesite' => 'None',
+                    ]
+                );
+            }
+            
+        }
+        
     }
 
     public function __destruct()
